@@ -1,0 +1,57 @@
+version: '3'
+
+services:
+  nginx_proxy:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nginx-ssl-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - letsencrypt_certs:/etc/letsencrypt
+      - nginx_logs:/var/log/nginx
+      - supervisor_logs:/var/log/supervisor
+    environment:
+      - DOMAIN1=api.knmholdings.vn
+      - PROXY_PASS_HOST1=knm-asterisk-service
+      - PROXY_PASS_PORT1=3000
+
+      - DOMAIN2=devapi.knmholdings.vn
+      - PROXY_PASS_HOST2=knm-asterisk-service-dev
+      - PROXY_PASS_PORT2=3000
+
+      - LETSENCRYPT_EMAIL=hieuhpcf@gmail.com
+      - STAGING=false
+
+      - PREFIX=core-asterisk-service
+    networks:
+      - knmholdings-network
+    restart: unless-stopped
+    depends_on: 
+      - knm-asterisk-service
+      - knm-asterisk-service-dev
+
+  knm-asterisk-service:
+    image: your_backend_api_image
+    container_name: knm-asterisk-service
+    networks:
+      - knmholdings-network
+    restart: unless-stopped
+
+  knm-asterisk-service-dev:
+    image: your_backend_devapi_image 
+    container_name: knm-asterisk-service-dev
+    networks:
+      - knmholdings-network
+    restart: unless-stopped
+
+volumes:
+  letsencrypt_certs:
+  nginx_logs:
+  supervisor_logs:
+
+networks:
+  knmholdings-network:
+    driver: bridge
